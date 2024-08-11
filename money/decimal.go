@@ -18,7 +18,22 @@ const (
 
 	// returned if the quantity is too arge - this would cause floating point precision errors.
 	ErrTooLarge = Error("quantity over 10^12 is too large")
+	maxDecimal = 1e12
 )
+
+func (d *Decimal) String() string {
+	if d.precision == 0 {
+		return fmt.Sprintf("%d", d.subunits)
+	}
+
+	centsPerUnit := pow10(int(d.precision))
+	frac := d.subunits % int64(centsPerUnit)
+	integer := d.subunits / int64(centsPerUnit)
+
+	decimalFormat := "%d.%0" + strconv.Itoa(int(d.precision)) + "d"
+	return fmt.Sprintf(decimalFormat, integer, frac)
+
+}
 
 func ParseDecimal(value string) (Decimal, error) {
 	intPart, fracPart, _ := strings.Cut(value, ".")
