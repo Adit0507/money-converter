@@ -5,6 +5,10 @@ type Currency struct {
 	precision byte
 }
 
+func (c Currency) String() string {
+	return c.code
+}
+
 const ErrInvalidCurrencyCode = Error("invalid currency code")
 
 func ParseCurrency(code string) (Currency, error) {
