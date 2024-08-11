@@ -8,7 +8,7 @@ import (
 )
 
 type Decimal struct {
-	subunits  int64
+	subunits int64
 	precision byte
 }
 
@@ -18,7 +18,7 @@ const (
 
 	// returned if the quantity is too arge - this would cause floating point precision errors.
 	ErrTooLarge = Error("quantity over 10^12 is too large")
-	maxDecimal = 1e12
+	maxDecimal  = 1e12
 )
 
 func (d *Decimal) String() string {
@@ -26,30 +26,32 @@ func (d *Decimal) String() string {
 		return fmt.Sprintf("%d", d.subunits)
 	}
 
-	centsPerUnit := pow10(int(d.precision))
-	frac := d.subunits % int64(centsPerUnit)
-	integer := d.subunits / int64(centsPerUnit)
+	centsPerUnit := pow10(d.precision)
+	frac := d.subunits % centsPerUnit
+	integer := d.subunits / centsPerUnit
 
+	// We always want to print the correct number of digits - even if they finish with 0.
 	decimalFormat := "%d.%0" + strconv.Itoa(int(d.precision)) + "d"
 	return fmt.Sprintf(decimalFormat, integer, frac)
-
 }
 
 func ParseDecimal(value string) (Decimal, error) {
 	intPart, fracPart, _ := strings.Cut(value, ".")
-
-	const maxDecimal = 12
-	if len(intPart) > maxDecimal {
-		return Decimal{}, ErrTooLarge
-	}
 
 	subunits, err := strconv.ParseInt(intPart+fracPart, 10, 64)
 	if err != nil {
 		return Decimal{}, fmt.Errorf("%w: %s", ErrInvalidDecimal, err.Error())
 	}
 
+	if subunits > maxDecimal {
+		return Decimal{}, ErrTooLarge
+	}
+
 	precision := byte(len(fracPart))
-	return Decimal{subunits: subunits, precision: precision}, nil
+	dec := Decimal{subunits: subunits, precision: precision}
+	dec.simplify()
+
+	return dec, nil
 }
 
 func (d *Decimal) simplify() {
@@ -59,7 +61,7 @@ func (d *Decimal) simplify() {
 	}
 }
 
-func pow10(power int) int {
+func pow10(power byte) int64 {
 	switch power {
 	case 0:
 		return 1
@@ -70,6 +72,6 @@ func pow10(power int) int {
 	case 3:
 		return 1000
 	default:
-		return int(math.Pow(10, float64(power)))
+		return int64(math.Pow(10, float64(power)))
 	}
 }
