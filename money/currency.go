@@ -27,3 +27,7 @@ func ParseCurrency(code string) (Currency, error) {
 		return Currency{code: code, precision: 2}, nil
 	}
 }
+
+func (c Currency) Code() string{
+	return c.code
+}
