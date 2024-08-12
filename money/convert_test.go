@@ -32,10 +32,21 @@ func mustParseAmount(t *testing.T, value string, code string) money.Amount {
 	return amount
 }
 
+type stubRate struct {
+	rate string
+	err  error
+}
+
+func (m stubRate) FetchExchangeRate(_, _ money.Currency) (money.ExchangeRate, error) {
+	rate, _ := money.ParseDecimal(m.rate)
+	return money.ExchangeRate(rate), m.err
+}
+
 func TestConvert(t *testing.T) {
 	tt := map[string]struct {
 		amount   money.Amount
 		to       money.Currency
+		stub     stubRate
 		validate func(t *testing.T, got money.Amount, err error)
 	}{
 		"34.98 USD to EUR": {
@@ -55,7 +66,7 @@ func TestConvert(t *testing.T) {
 
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
-			got, err := money.Convert(tc.amount, tc.to)
+			got, err := money.Convert(tc.amount, tc.to, tc.stub)
 			tc.validate(t, got, err)
 		})
 	}
